@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="EKitap.Api/EKitap.Api.csproj" />
+  <Project Path="EKitap.Tests/EKitap.Tests.csproj" />
 </Solution>
