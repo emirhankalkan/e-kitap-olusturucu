@@ -179,7 +179,7 @@ public sealed class BookUploadTests
         Assert.Empty(Directory.GetFiles(factory.StorageDirectory, "*.docx", SearchOption.AllDirectories));
     }
 
-    private static MultipartFormDataContent CreateForm(int count = 10, string? name = " Örnek kitap ",
+    internal static MultipartFormDataContent CreateForm(int count = 10, string? name = " Örnek kitap ",
         string? fileName = null, byte[]? bytes = null)
     {
         var form = new MultipartFormDataContent();
@@ -198,7 +198,7 @@ public sealed class BookUploadTests
             using (var writer = new StreamWriter(archive.CreateEntry("_rels/.rels").Open()))
                 writer.Write("<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'><Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument' Target='word/document.xml'/></Relationships>");
             using (var writer = new StreamWriter(archive.CreateEntry("[Content_Types].xml").Open()))
-                writer.Write("<Types xmlns='http://schemas.openxmlformats.org/package/2006/content-types'><Override PartName='/word/document.xml' ContentType='application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml'/></Types>");
+                writer.Write("<Types xmlns='http://schemas.openxmlformats.org/package/2006/content-types'><Default Extension='rels' ContentType='application/vnd.openxmlformats-package.relationships+xml'/><Override PartName='/word/document.xml' ContentType='application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml'/></Types>");
             using (var writer = new StreamWriter(archive.CreateEntry("word/document.xml").Open()))
                 writer.Write(document ?? "<w:document xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main'><w:body><w:p><w:r><w:t>Örnek bildiri elif@example.org 0500 000 00 01</w:t></w:r></w:p></w:body></w:document>");
         }

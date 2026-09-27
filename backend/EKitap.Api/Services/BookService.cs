@@ -53,7 +53,7 @@ public sealed class BookService(
             throw;
         }
 
-        return ToResponse(book);
+        return BookResponse.From(book);
     }
 
     public async Task<BookResponse?> GetAsync(Guid id, CancellationToken cancellationToken)
@@ -61,12 +61,6 @@ public sealed class BookService(
         var book = await dbContext.Books.AsNoTracking()
             .Include(book => book.Papers)
             .SingleOrDefaultAsync(book => book.Id == id, cancellationToken);
-        return book is null ? null : ToResponse(book);
+        return book is null ? null : BookResponse.From(book);
     }
-
-    private static BookResponse ToResponse(Book book) => new(
-        book.Id, book.Name, book.Status.ToString(), book.CreatedAt,
-        book.Papers.OrderBy(paper => paper.SortOrder)
-            .Select(paper => new PaperResponse(paper.Id, paper.OriginalFileName,
-                paper.SortOrder, paper.Title, paper.StartPage)).ToArray());
 }

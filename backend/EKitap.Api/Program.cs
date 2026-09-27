@@ -9,13 +9,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
+// Yerel ve CI ortamlarında Windows Event Log yetkisine ihtiyaç duyulmaz.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("SQL Server bağlantı bilgisi tanımlanmalıdır.");
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = UploadLimits.MaxRequestBytes);
-builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = UploadLimits.MaxFileBytes);
+builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = UploadLimits.MaxRequestBytes);
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
     options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(
@@ -28,7 +32,13 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<BookGenerationService>();
+builder.Services.AddScoped<BookPdfService>();
 builder.Services.AddSingleton<DocxUploadValidator>();
+builder.Services.AddSingleton<ContactInfoCleaner>();
+builder.Services.AddSingleton<DocxReaderService>();
+builder.Services.AddSingleton<PdfGeneratorService>();
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddSingleton<IBookFileStorage, LocalBookFileStorage>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");

@@ -10,10 +10,12 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace EKitap.Tests;
 
-public sealed class UploadApiFactory(bool failDatabase = false, bool failStorage = false)
+public sealed class UploadApiFactory(bool failDatabase = false, bool failStorage = false,
+    Func<IBookFileStorage, IBookFileStorage>? decorateStorage = null)
     : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection connection = new("Data Source=:memory:");
@@ -24,6 +26,8 @@ public sealed class UploadApiFactory(bool failDatabase = false, bool failStorage
         connection.Open();
         connection.CreateFunction("LEN", (string value) => value.TrimEnd().Length);
         Directory.CreateDirectory(StorageDirectory);
+        // Testler işletim sisteminin Event Log yetkilerine bağlı olmamalıdır.
+        builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<AppDbContext>();
@@ -40,7 +44,7 @@ public sealed class UploadApiFactory(bool failDatabase = false, bool failStorage
             {
                 var environment = new StorageEnvironment { ContentRootPath = StorageDirectory };
                 var storage = new LocalBookFileStorage(environment);
-                return failStorage ? new FailingStorage(storage) : storage;
+                return decorateStorage?.Invoke(storage) ?? (failStorage ? new FailingStorage(storage) : storage);
             });
         });
     }
@@ -91,5 +95,10 @@ public sealed class UploadApiFactory(bool failDatabase = false, bool failStorage
         }
 
         public void DeleteBookFiles(Guid bookId) => inner.DeleteBookFiles(bookId);
+        public Stream OpenDocument(Guid bookId, Guid paperId) => inner.OpenDocument(bookId, paperId);
+        public Task<string> SavePdfAsync(Guid bookId, byte[] bytes, CancellationToken cancellationToken)
+            => inner.SavePdfAsync(bookId, bytes, cancellationToken);
+        public Stream OpenPdf(Guid bookId) => inner.OpenPdf(bookId);
+        public void DeletePdf(Guid bookId) => inner.DeletePdf(bookId);
     }
 }

@@ -23,6 +23,14 @@ public sealed class ApiExceptionHandler(
                 Title = "Yükleme bilgilerini kontrol edin."
             };
         }
+        else if (exception is BookOperationException operationException)
+        {
+            problem = new ProblemDetails
+            {
+                Status = operationException.StatusCode,
+                Title = operationException.Message
+            };
+        }
         else if (exception is BadHttpRequestException badRequest)
         {
             problem = new ProblemDetails
